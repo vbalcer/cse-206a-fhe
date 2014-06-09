@@ -86,6 +86,7 @@ class EncryptionSystem:
 	
 	def publicKeySwitchingKey(self, E, z, s):
 		q1 = E.ring.order()
+		q = self.ring.order()
 		g = RR(q1)/RR(q)*vector(RR, map(lambda x: 2^x, range(self.l)))
 		sis = map(lambda x: vector(E.ring, map(lambda x: self.ring(round(x)), RR(x)*g)), s)
 		K = []
@@ -100,8 +101,6 @@ class EncryptionSystem:
 		v = -1*sum(ci*Ki for ci, Ki in zip(cis, K))
 		q1 = Ebig.ring.order()
 		q = self.ring.order()
-		print v
-		print v[0, -1]
 		v[0, -1] = v[0, -1] + self.ring(round(RR(q)/RR(q1)*RR(c[-1])))
 		return v
 	
@@ -129,14 +128,13 @@ def testSystem(N = 20, full=True):
 #~ m = E.decrypt(E.hMul(c1, c2), s)
 #~ print "m:", m
 
-for i in range(1):
-	print i
+for i in range(100):
 	n = 8
-	q = 16
-	beta = 0
+	q = 512
+	beta = 2
 	N = 8
 	Q = 1024
-	Beta = 0
+	Beta = 2
 	E = EncryptionSystem(n, q, beta, False)
 	s = E.keyGen()
 	Ebig = EncryptionSystem(N, Q, Beta, True)
@@ -146,14 +144,13 @@ for i in range(1):
 	c = Ebig.encrypt(m, z)
 	c1 = E.switchKeys(c[-1], K, Ebig)
 	m1 = E.decrypt(c1, s)
-	print m == m1
 	
 	#~ pubS = E.publicDecryptionKey(Ebig, z, s)
 	#~ m = randint(0,1)
 	#~ c = E.encrypt(m, s)
 	#~ c1 = E.hDecrypt(pubS, c, Ebig)
 	#~ m1 = Ebig.decrypt(c1, z)
-	#~ if m != m1:
-		#~ print "FAIL!!!!"
-		#~ break
+	if m != m1:
+		print "FAIL!!!!"
+		break
 
