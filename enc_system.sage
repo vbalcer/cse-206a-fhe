@@ -45,13 +45,22 @@ class EncryptionSystem:
 		return c
 	
 	def decomposeMat(self, c1):
-		C1i = []
 		C1 = matrix(ZZ, c1)
+		C1i = []
 		for i in range(self.l):
 			Ci = matrix(ZZ, matrix(Integers(2), C1))
 			C1i.append(Ci)
 			C1 = (1/2)*(C1 - Ci)
-		return block_matrix(self.ring, [C1i])
+		
+		m = C1.nrows()
+		n = C1.ncols()
+		C1bar = matrix(self.ring, m, n*self.l)
+		for k in range(len(C1i)):
+			for i in range(m):
+				for j in range(n):
+					C1bar[i, k*n+j] = C1i[k][i,j]
+		return C1bar
+		#~ return block_matrix(self.ring, [C1i])
 
 	def hMul(self, c1, c2):
 		if not self.full:
@@ -114,42 +123,31 @@ def testSystem(N = 20, full=True):
 		if (m != m1):
 			return False
 	return True
-	
 
-#~ E = EncryptionSystem(16, 4096, 4)
-#~ s = E.keyGen()
-#~ m1 = randint(0,1)
-#~ print "m1:", m1
-#~ c1 = E.encrypt(m1, s)
-#~ m2 = randint(0,1)
-#~ print "m2:", m2
-#~ c2 = E.encrypt(m2, s)
-#~ print "multiplying"
-#~ m = E.decrypt(E.hMul(c1, c2), s)
-#~ print "m:", m
 
-for i in range(100):
+for i in range(1):
 	n = 8
-	q = 512
-	beta = 2
+	q = 8
+	beta = 1
 	N = 8
-	Q = 1024
-	Beta = 2
+	Q = 128
+	Beta = 1
 	E = EncryptionSystem(n, q, beta, False)
 	s = E.keyGen()
 	Ebig = EncryptionSystem(N, Q, Beta, True)
 	z = Ebig.keyGen()
-	K = Ebig.publicKeySwitchingKey(E, s, z)
-	m = randint(0,1)
-	c = Ebig.encrypt(m, z)
-	c1 = E.switchKeys(c[-1], K, Ebig)
-	m1 = E.decrypt(c1, s)
 	
-	#~ pubS = E.publicDecryptionKey(Ebig, z, s)
+	#~ K = Ebig.publicKeySwitchingKey(E, s, z)
 	#~ m = randint(0,1)
-	#~ c = E.encrypt(m, s)
-	#~ c1 = E.hDecrypt(pubS, c, Ebig)
-	#~ m1 = Ebig.decrypt(c1, z)
+	#~ c = Ebig.encrypt(m, z)
+	#~ c1 = E.switchKeys(c[-1], K, Ebig)
+	#~ m1 = E.decrypt(c1, s)
+	
+	pubS = E.publicDecryptionKey(Ebig, z, s)
+	m = randint(0,1)
+	c = E.encrypt(m, s)
+	m1 = Ebig.decrypt(c1, z)
+	
 	if m != m1:
 		print "FAIL!!!!"
 		break
