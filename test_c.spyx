@@ -1,0 +1,15 @@
+#~ from sage.matrix.matrix cimport Matrix
+from sage.rings.integer_ring import ZZ
+from sage.matrix.constructor import matrix
+
+def decompose(c1, l, ring):
+	C1 = matrix(ZZ, c1)
+	m = C1.nrows()
+	n = C1.ncols()
+	C1bar = matrix(ring, m, n*l)
+	for i in range(m):
+		for j in range(n):
+			bits = C1[i,j].bits()
+			for k,bit in enumerate(bits):
+				C1bar[i, k*n + j] = bit
+	return C1bar
