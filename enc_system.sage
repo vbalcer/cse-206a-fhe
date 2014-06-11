@@ -1,3 +1,6 @@
+load "test_c.spyx"
+import numpy as np
+
 class EncryptionSystem:
 	def __init__(self, n, q, beta, full=True):
 		self.n = n
@@ -44,24 +47,30 @@ class EncryptionSystem:
 			c.append(ck)
 		return c
 	
-	def decomposeMat(self, c1):
+	def decomposeMatBackup(self, c1):
 		C1 = matrix(ZZ, c1)
 		C1i = []
 		for i in range(self.l):
 			Ci = matrix(ZZ, matrix(Integers(2), C1))
 			C1i.append(Ci)
 			C1 = (1/2)*(C1 - Ci)
-		
+		return block_matrix(self.ring, [C1i])
+	
+	def decomposeMat2(self, c1):
+		C1 = matrix(ZZ, c1)
 		m = C1.nrows()
 		n = C1.ncols()
 		C1bar = matrix(self.ring, m, n*self.l)
-		for k in range(len(C1i)):
-			for i in range(m):
-				for j in range(n):
-					C1bar[i, k*n+j] = C1i[k][i,j]
+		for i in range(m):
+			for j in range(n):
+				bits = C1[i,j].bits()
+				for k,bit in enumerate(bits):
+					C1bar[i, k*n + j] = bit
 		return C1bar
-		#~ return block_matrix(self.ring, [C1i])
-
+	
+	def decomposeMat(self, c1):
+		return decompose(c1, self.l, self.ring)
+	
 	def hMul(self, c1, c2):
 		if not self.full:
 			raise RuntimeError("Homomorphic multiplication only works for the full system!")
@@ -124,13 +133,30 @@ def testSystem(N = 20, full=True):
 			return False
 	return True
 
+N = 32
+Q = 4096
+Beta = 0
+E = EncryptionSystem(N, Q, Beta, True)
+s = E.keyGen()
+c = E.encrypt(randint(0,1), s)
+timeit("E.decomposeMat(c)")
+timeit("E.decomposeMat2(c)")
+timeit("E.decomposeMatBackup(c)")
+ct = c.transpose()
+timeit("ct*c")
+cbar1 = E.decomposeMat(c)
+cbar2 = E.decomposeMat2(c)
+cbar3 = E.decomposeMatBackup(c)
+print cbar1 == cbar2 and cbar1 == cbar3
 
-for i in range(1):
+"""
+for i in range(20):
+	print i
 	n = 8
 	q = 8
 	beta = 1
 	N = 8
-	Q = 128
+	Q = 4096
 	Beta = 1
 	E = EncryptionSystem(n, q, beta, False)
 	s = E.keyGen()
@@ -146,9 +172,10 @@ for i in range(1):
 	pubS = E.publicDecryptionKey(Ebig, z, s)
 	m = randint(0,1)
 	c = E.encrypt(m, s)
+	c1 = E.hDecrypt(pubS, c, Ebig)
 	m1 = Ebig.decrypt(c1, z)
 	
 	if m != m1:
 		print "FAIL!!!!"
 		break
-
+"""
