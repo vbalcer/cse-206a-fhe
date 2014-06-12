@@ -1,5 +1,4 @@
 load "test_c.spyx"
-import numpy as np
 
 class EncryptionSystem:
 	def __init__(self, n, q, beta, full=True):
@@ -40,10 +39,15 @@ class EncryptionSystem:
 	def hLstAdd(self, ci, cj):
 		c = []
 		q = len(ci)
+		
+		ci_dec = [self.decomposeMat(cc) for cc in ci]
+		
 		for k in range(q):
-			ck = self.hMul(ci[0], cj[k])
+			ck = ci_dec[0]*cj[k]
+			#~ ck = self.hMul(ci[0], cj[k])
 			for t in range(1, q):
-				ck = self.hAdd(ck, self.hMul(ci[t], cj[(k-t)%q]))
+				#~ ck = self.hAdd(ck, self.hMul(ci[t], cj[(k-t)%q]))
+				ck = self.hAdd(ck, ci_dec[t]*cj[(k-t)%q])
 			c.append(ck)
 		return c
 	
@@ -122,6 +126,20 @@ class EncryptionSystem:
 		v[0, -1] = v[0, -1] + self.ring(round(RR(q)/RR(q1)*RR(c[-1])))
 		return v
 	
+	def estimateHMuls(self):
+		q = self.ring.order()
+		return (self.n*self.l*q)/2
+	
+	def hNot(self, c):
+		return self.G - c
+	
+	def hNand(self, c1, c2, Ebig, pubS, K):
+		c1prime = self.hDecrypt(pubS, c1, Ebig)
+		c2prime = self.hDecrypt(pubS, c2, Ebig)
+		cprime = Ebig.hMul(c1prime, c2prime)
+		c = self.switchKeys(cprime[-1], K, Ebig)
+		return self.hNot(c)
+	
 def testSystem(N = 20, full=True):
 	for i in xrange(100):
 		E = EncryptionSystem(16, 4096, 4, full)
@@ -133,49 +151,110 @@ def testSystem(N = 20, full=True):
 			return False
 	return True
 
-N = 32
-Q = 4096
-Beta = 0
-E = EncryptionSystem(N, Q, Beta, True)
-s = E.keyGen()
-c = E.encrypt(randint(0,1), s)
-timeit("E.decomposeMat(c)")
-timeit("E.decomposeMat2(c)")
-timeit("E.decomposeMatBackup(c)")
-ct = c.transpose()
-timeit("ct*c")
-cbar1 = E.decomposeMat(c)
-cbar2 = E.decomposeMat2(c)
-cbar3 = E.decomposeMatBackup(c)
-print cbar1 == cbar2 and cbar1 == cbar3
+#~ N = 32
+#~ Q = 4096
+#~ Beta = 0
+#~ E = EncryptionSystem(N, Q, Beta, True)
+#~ s = E.keyGen()
+#~ c = E.encrypt(randint(0,1), s)
+#~ timeit("E.decomposeMat(c)")
+#~ timeit("E.decomposeMat2(c)")
+#~ timeit("E.decomposeMatBackup(c)")
+#~ ct = c.transpose()
+#~ timeit("ct*c")
+#~ cbar1 = E.decomposeMat(c)
+#~ cbar2 = E.decomposeMat2(c)
+#~ cbar3 = E.decomposeMatBackup(c)
+#~ print cbar1 == cbar2 and cbar1 == cbar3
 
 """
-for i in range(20):
+for i in range(10):
 	print i
 	n = 8
-	q = 8
+	q = 64
 	beta = 1
 	N = 8
-	Q = 4096
+	Q = 2^18
 	Beta = 1
+	
+	#~ n = 8
+	#~ q = 64
+	#~ beta = 0
+	#~ N = 8
+	#~ Q = 64
+	#~ Beta = 0
 	E = EncryptionSystem(n, q, beta, False)
 	s = E.keyGen()
 	Ebig = EncryptionSystem(N, Q, Beta, True)
 	z = Ebig.keyGen()
 	
-	#~ K = Ebig.publicKeySwitchingKey(E, s, z)
+	#~ c = Ebig.encrypt(randint(0,1), z)
+	#~ print E.estimateHMuls()
+	#~ timeit("Ebig.hMul(c,c)")
+	
+	K = Ebig.publicKeySwitchingKey(E, s, z)
 	#~ m = randint(0,1)
 	#~ c = Ebig.encrypt(m, z)
 	#~ c1 = E.switchKeys(c[-1], K, Ebig)
 	#~ m1 = E.decrypt(c1, s)
 	
 	pubS = E.publicDecryptionKey(Ebig, z, s)
-	m = randint(0,1)
-	c = E.encrypt(m, s)
-	c1 = E.hDecrypt(pubS, c, Ebig)
-	m1 = Ebig.decrypt(c1, z)
+	#~ m = randint(0,1)
+	#~ c = E.encrypt(m, s)
+	#~ c1 = E.hDecrypt(pubS, c, Ebig)
+	#~ m1 = Ebig.decrypt(c1, z)
+	#~ 
+	#~ if m != m1:
+		#~ print "FAIL!!!!"
+		#~ break
 	
-	if m != m1:
+	m1 = randint(0,1)
+	m2 = randint(0,1)
+	c1 = E.encrypt(m1, s)
+	c2 = E.encrypt(m2, s)
+	
+	c = E.hNand(c1, c2, Ebig, pubS, K)
+	if (not(m1*m2)) != E.decrypt(c, s):
 		print "FAIL!!!!"
 		break
 """
+
+for beta in range(100):
+	print beta
+	n=8
+	q = 2^6
+	Q = 2^16
+	failed=True
+	while failed:
+		failed = False
+		for i in range(20):
+			E = EncryptionSystem(n, q, beta, False)
+			s = E.keyGen()
+			Ebig = EncryptionSystem(n, Q, beta, True)
+			z = Ebig.keyGen()
+			K = Ebig.publicKeySwitchingKey(E, s, z)
+			m = randint(0,1)
+			c = Ebig.encrypt(m, z)
+			c1 = E.switchKeys(c[-1], K, Ebig)
+			m1 = E.decrypt(c1, s)
+			if (m != m1):
+				failed = True
+				q *= 2
+				print "q doubled: ", q
+				break
+			
+			pubS = E.publicDecryptionKey(Ebig, z, s)
+			m1 = randint(0,1)
+			m2 = randint(0,1)
+			c1 = E.encrypt(m1, s)
+			c2 = E.encrypt(m2, s)
+			
+			c = E.hNand(c1, c2, Ebig, pubS, K)
+			if (not(m1*m2)) != E.decrypt(c, s):
+				failed=True
+				Q *= 2
+				print "Q doubled: ", Q
+				break
+		
+		if not failed:
+			print "beta={0}, q={1}, Q={2}".format(beta, q, Q)
