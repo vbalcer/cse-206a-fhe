@@ -151,74 +151,138 @@ def testSystem(N = 20, full=True):
 			return False
 	return True
 
-#~ N = 32
-#~ Q = 4096
-#~ Beta = 0
-#~ E = EncryptionSystem(N, Q, Beta, True)
-#~ s = E.keyGen()
-#~ c = E.encrypt(randint(0,1), s)
-#~ timeit("E.decomposeMat(c)")
-#~ timeit("E.decomposeMat2(c)")
-#~ timeit("E.decomposeMatBackup(c)")
-#~ ct = c.transpose()
-#~ timeit("ct*c")
-#~ cbar1 = E.decomposeMat(c)
-#~ cbar2 = E.decomposeMat2(c)
-#~ cbar3 = E.decomposeMatBackup(c)
-#~ print cbar1 == cbar2 and cbar1 == cbar3
+def checkKeySwitching(n, q, beta, N, Q, Beta, T=20):
+	for i in range(T):
+		E = EncryptionSystem(n, q, beta, False)
+		s = E.keyGen()
+		Ebig = EncryptionSystem(N, Q, Beta, True)
+		z = Ebig.keyGen()
+		
+		K = Ebig.publicKeySwitchingKey(E, s, z)
+		m = randint(0,1)
+		c = Ebig.encrypt(m, z)
+		c1 = E.switchKeys(c[-1], K, Ebig)
+		m1 = E.decrypt(c1, s)
+		
+		if m != m1:
+			return False
+	return True
 
-"""
-for i in range(10):
-	print i
-	n = 8
-	q = 64
-	beta = 1
-	N = 8
-	Q = 2^18
-	Beta = 1
-	
-	#~ n = 8
-	#~ q = 64
-	#~ beta = 0
-	#~ N = 8
-	#~ Q = 64
-	#~ Beta = 0
-	E = EncryptionSystem(n, q, beta, False)
-	s = E.keyGen()
-	Ebig = EncryptionSystem(N, Q, Beta, True)
-	z = Ebig.keyGen()
-	
-	#~ c = Ebig.encrypt(randint(0,1), z)
-	#~ print E.estimateHMuls()
-	#~ timeit("Ebig.hMul(c,c)")
-	
-	K = Ebig.publicKeySwitchingKey(E, s, z)
-	#~ m = randint(0,1)
-	#~ c = Ebig.encrypt(m, z)
-	#~ c1 = E.switchKeys(c[-1], K, Ebig)
-	#~ m1 = E.decrypt(c1, s)
-	
-	pubS = E.publicDecryptionKey(Ebig, z, s)
-	#~ m = randint(0,1)
-	#~ c = E.encrypt(m, s)
-	#~ c1 = E.hDecrypt(pubS, c, Ebig)
-	#~ m1 = Ebig.decrypt(c1, z)
+def checkHDecryption(n, q, beta, N, Q, Beta, T=20):
+	for i in range(T):
+		#~ print i
+		E = EncryptionSystem(n, q, beta, False)
+		s = E.keyGen()
+		Ebig = EncryptionSystem(N, Q, Beta, True)
+		z = Ebig.keyGen()
+		
+		pubS = E.publicDecryptionKey(Ebig, z, s)
+		m = randint(0,1)
+		c = E.encrypt(m, s)
+		c1 = E.hDecrypt(pubS, c, Ebig)
+		m1 = Ebig.decrypt(c1, z)
+		
+		if m != m1:
+			return False
+	return True
+
+def checkNand(n, q, beta, N, Q, Beta, T=20):
+	for i in range(T):
+		print i
+		E = EncryptionSystem(n, q, beta, False)
+		s = E.keyGen()
+		Ebig = EncryptionSystem(N, Q, Beta, True)
+		z = Ebig.keyGen()
+		
+		pubS = E.publicDecryptionKey(Ebig, z, s)
+		K = Ebig.publicKeySwitchingKey(E, s, z)
+		
+		m1 = randint(0,1)
+		m2 = randint(0,1)
+		c1 = E.encrypt(m1, s)
+		c2 = E.encrypt(m2, s)
+		
+		c = E.hNand(c1, c2, Ebig, pubS, K)
+		if (not(m1*m2)) != E.decrypt(c, s):
+			return False
+		
+	return True
+
+print "checking nontrivial nand gate"
+l = 2
+n = 2^l
+q = 64
+beta = 1
+N = 4
+Q = 2^10*32768
+Beta = 1
+#~ print checkKeySwitching(n, q, beta, N, Q, Beta)
+#~ print checkHDecryption(n, q, beta, N, Q, Beta)
+print checkNand(n, q, beta, N, Q, Beta)
+
+#~ for i in range(1):
+	#~ E = EncryptionSystem(n, q, beta, False)
+	#~ s = E.keyGen()
+	#~ Ebig = EncryptionSystem(N, Q, Beta, True)
+	#~ z = Ebig.keyGen()
 	#~ 
-	#~ if m != m1:
-		#~ print "FAIL!!!!"
-		#~ break
-	
-	m1 = randint(0,1)
-	m2 = randint(0,1)
-	c1 = E.encrypt(m1, s)
-	c2 = E.encrypt(m2, s)
-	
-	c = E.hNand(c1, c2, Ebig, pubS, K)
-	if (not(m1*m2)) != E.decrypt(c, s):
-		print "FAIL!!!!"
-		break
-"""
+	#~ c = Ebig.encrypt(randint(0,1), z)
+	#~ print "decompositions: ", n*l*q
+	#~ timeit("Ebig.decomposeMat(c)")
+	#~ 
+	#~ print "matrix multiplications: ", n*l*q^2
+	#~ ct = c.transpose()
+	#~ timeit("ct*c")
 
+
+#~ for l in range(2, 8):
+	#~ print "n =", 2^l
+	#~ 
+	#~ n = 2^l
+	#~ beta = floor(n.sqrt())
+	#~ q = n^2*l^2
+	#~ N = n
+	#~ Q = l^2*n^2*q^3
+	#~ Beta = beta
+	#~ 
+	#~ E = EncryptionSystem(n, q, beta, False)
+	#~ s = E.keyGen()
+	#~ Ebig = EncryptionSystem(N, Q, Beta, True)
+	#~ z = Ebig.keyGen()
+	#~ 
+	#~ c = Ebig.encrypt(randint(0,1), z)
+	#~ print "decompositions: ", n*l*q
+	#~ timeit("Ebig.decomposeMat(c)")
+	#~ 
+	#~ print "matrix multiplications: ", n*l*q^2
+	#~ ct = c.transpose()
+	#~ timeit("ct*c")
+	#~ 
+	#~ print "key switching test: ", checkKeySwitching(n, q, beta, N, Q, Beta)
+
+#~ print "search for smallest Q s.t. homomorphic decryption works for beta=1:"
+#~ beta = 1
+#~ for ne in range(2, 8):
+	#~ n = 2^ne
+	#~ for l in range(3, 8):
+		#~ q = 2^l
+		#~ Q = q
+		#~ while not checkHDecryption(n,q,beta,n,Q,beta, 10):
+			#~ Q *= 2
+		#~ print "n={0}, q={1}, Q={2}".format(n,q,Q)
+
+#~ print "search for largest Q s.t. key switching works for beta=1:"
+#~ beta = 1
+#~ for ne in range(2, 8):
+	#~ n = 2^ne
+	#~ for l in range(3, 11):
+		#~ q = 2^l
+		#~ Q = q
+		#~ while checkKeySwitching(n,q,beta,n,Q,beta):
+			#~ Q *= 2
+		#~ print "n={0}, q={1}, Q={2}".format(n,q,Q)
+
+"""
 for beta in range(100):
 	print beta
 	n=8
@@ -258,3 +322,4 @@ for beta in range(100):
 		
 		if not failed:
 			print "beta={0}, q={1}, Q={2}".format(beta, q, Q)
+"""
