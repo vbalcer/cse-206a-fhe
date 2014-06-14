@@ -40,37 +40,17 @@ class EncryptionSystem:
 		c = []
 		q = len(ci)
 		
+		# instead of calling hMul in the loop, we decompose the
+		# first vector entirely and use normal multiplication. this
+		# allows to cut down on the number of decompositions
 		ci_dec = [self.decomposeMat(cc) for cc in ci]
 		
 		for k in range(q):
 			ck = ci_dec[0]*cj[k]
-			#~ ck = self.hMul(ci[0], cj[k])
 			for t in range(1, q):
-				#~ ck = self.hAdd(ck, self.hMul(ci[t], cj[(k-t)%q]))
 				ck = self.hAdd(ck, ci_dec[t]*cj[(k-t)%q])
 			c.append(ck)
 		return c
-	
-	def decomposeMatBackup(self, c1):
-		C1 = matrix(ZZ, c1)
-		C1i = []
-		for i in range(self.l):
-			Ci = matrix(ZZ, matrix(Integers(2), C1))
-			C1i.append(Ci)
-			C1 = (1/2)*(C1 - Ci)
-		return block_matrix(self.ring, [C1i])
-	
-	def decomposeMat2(self, c1):
-		C1 = matrix(ZZ, c1)
-		m = C1.nrows()
-		n = C1.ncols()
-		C1bar = matrix(self.ring, m, n*self.l)
-		for i in range(m):
-			for j in range(n):
-				bits = C1[i,j].bits()
-				for k,bit in enumerate(bits):
-					C1bar[i, k*n + j] = bit
-		return C1bar
 	
 	def decomposeMat(self, c1):
 		return decompose(c1, self.l, self.ring)
@@ -94,13 +74,10 @@ class EncryptionSystem:
 		vs = []
 		for i in range(self.n - 1):
 			ci = self.decomposeMat([c[0, i]])[0]
-			#~ print ci
 			for j in range(len(ci)):
 				if ci[j] == 1:
 					vs.append(pubS[i,j])
-		#~ print "computing convolutions"
 		v = reduce(lambda x, y: Ebig.hLstAdd(x, y), vs[1:], vs[0])
-		#~ print "done convolutions"
 		v.reverse()
 		v = v[-ZZ(c[0][-1]):] + v[:-ZZ(c[0][-1])]
 		
@@ -170,7 +147,6 @@ def checkKeySwitching(n, q, beta, N, Q, Beta, T=20):
 
 def checkHDecryption(n, q, beta, N, Q, Beta, T=20):
 	for i in range(T):
-		#~ print i
 		E = EncryptionSystem(n, q, beta, False)
 		s = E.keyGen()
 		Ebig = EncryptionSystem(N, Q, Beta, True)
@@ -209,56 +185,31 @@ def checkNand(n, q, beta, N, Q, Beta, T=20):
 	return True
 
 print "checking nontrivial nand gate"
-l = 2
-n = 2^l
-q = 64
+l = 6
+n = 4
+q = 2^l
 beta = 1
 N = 4
-Q = 2^10*32768
+Q = 2^25
 Beta = 1
 #~ print checkKeySwitching(n, q, beta, N, Q, Beta)
 #~ print checkHDecryption(n, q, beta, N, Q, Beta)
-print checkNand(n, q, beta, N, Q, Beta)
+#~ print checkNand(n, q, beta, N, Q, Beta)
 
-#~ for i in range(1):
-	#~ E = EncryptionSystem(n, q, beta, False)
-	#~ s = E.keyGen()
-	#~ Ebig = EncryptionSystem(N, Q, Beta, True)
-	#~ z = Ebig.keyGen()
-	#~ 
-	#~ c = Ebig.encrypt(randint(0,1), z)
-	#~ print "decompositions: ", n*l*q
-	#~ timeit("Ebig.decomposeMat(c)")
-	#~ 
-	#~ print "matrix multiplications: ", n*l*q^2
-	#~ ct = c.transpose()
-	#~ timeit("ct*c")
+E = EncryptionSystem(n, q, beta, False)
+s = E.keyGen()
+Ebig = EncryptionSystem(N, Q, Beta, True)
+z = Ebig.keyGen()
 
+print "decompositions: ", n*l*q
+c = Ebig.encrypt(randint(0,1), z)
+timeit("Ebig.decomposeMat(c)")
 
-#~ for l in range(2, 8):
-	#~ print "n =", 2^l
-	#~ 
-	#~ n = 2^l
-	#~ beta = floor(n.sqrt())
-	#~ q = n^2*l^2
-	#~ N = n
-	#~ Q = l^2*n^2*q^3
-	#~ Beta = beta
-	#~ 
-	#~ E = EncryptionSystem(n, q, beta, False)
-	#~ s = E.keyGen()
-	#~ Ebig = EncryptionSystem(N, Q, Beta, True)
-	#~ z = Ebig.keyGen()
-	#~ 
-	#~ c = Ebig.encrypt(randint(0,1), z)
-	#~ print "decompositions: ", n*l*q
-	#~ timeit("Ebig.decomposeMat(c)")
-	#~ 
-	#~ print "matrix multiplications: ", n*l*q^2
-	#~ ct = c.transpose()
-	#~ timeit("ct*c")
-	#~ 
-	#~ print "key switching test: ", checkKeySwitching(n, q, beta, N, Q, Beta)
+print "matrix multiplications: ", n*l*q^2
+c = Ebig.encrypt(randint(0,1), z)
+c_dec = Ebig.decomposeMat(c)
+timeit("c_dec*c")
+
 
 #~ print "search for smallest Q s.t. homomorphic decryption works for beta=1:"
 #~ beta = 1
@@ -282,44 +233,3 @@ print checkNand(n, q, beta, N, Q, Beta)
 			#~ Q *= 2
 		#~ print "n={0}, q={1}, Q={2}".format(n,q,Q)
 
-"""
-for beta in range(100):
-	print beta
-	n=8
-	q = 2^6
-	Q = 2^16
-	failed=True
-	while failed:
-		failed = False
-		for i in range(20):
-			E = EncryptionSystem(n, q, beta, False)
-			s = E.keyGen()
-			Ebig = EncryptionSystem(n, Q, beta, True)
-			z = Ebig.keyGen()
-			K = Ebig.publicKeySwitchingKey(E, s, z)
-			m = randint(0,1)
-			c = Ebig.encrypt(m, z)
-			c1 = E.switchKeys(c[-1], K, Ebig)
-			m1 = E.decrypt(c1, s)
-			if (m != m1):
-				failed = True
-				q *= 2
-				print "q doubled: ", q
-				break
-			
-			pubS = E.publicDecryptionKey(Ebig, z, s)
-			m1 = randint(0,1)
-			m2 = randint(0,1)
-			c1 = E.encrypt(m1, s)
-			c2 = E.encrypt(m2, s)
-			
-			c = E.hNand(c1, c2, Ebig, pubS, K)
-			if (not(m1*m2)) != E.decrypt(c, s):
-				failed=True
-				Q *= 2
-				print "Q doubled: ", Q
-				break
-		
-		if not failed:
-			print "beta={0}, q={1}, Q={2}".format(beta, q, Q)
-"""
