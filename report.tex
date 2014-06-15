@@ -21,9 +21,9 @@ We implemented a proof-of-concept NAND gate, since it is functionally complete.
 The implementation is highly inefficient and features no aglebraic
 optimizations; our proof-of-concept takes approximately twenty minutes to
 compute an encrypted NAND over two bits with the following parameters: $n=4$,
-$q=64$, $Q=2^{25}$, and $\Beta=1$ (i.e. keys $s\in \mathbb{Z}_{64}^4$ and
+$q=64$, $Q=2^{25}$, and $\beta = 1$ (i.e. keys $s\in \mathbb{Z}_{64}^4$ and
 $z\in\mathbb{Z}_{2^{25}}^4$). These are the smallest parameters for which we
-can compute a NAND gate with error $\Beta > 0$. To validate the gate, we
+can compute a NAND gate with error $\beta > 0$. To validate the gate, we
 computed an encrypted NAND over two randomly generated bits and compared the
 the decrypted output with the expected output. Decryption was successful across
 twenty independent trials. The trials are meaningful; with increased error
