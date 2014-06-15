@@ -10,6 +10,7 @@
 \centerline{Michael Walter \hspace{0.1in} James Mouradian \hspace{0.1in} Victor Balcer}
 \vspace{4.0pt}
 \centerline{\today}
+\vspace{14.0pt}
 
 For our project we implemented fully homomorphic encryption, using the scheme
 described in class and in lecture notes, using the Sage open-source mathematics
@@ -31,16 +32,17 @@ the test reports both positive and negative results.
 
 \section{Parameter Tuning}
 
-% add smallest found parameters for beta=1 and n=8 with decryption and key switching
-% add estimation of time for caculating nand operation on nand gates.
+Both key switching and homomorphic decryption work on parameters: $n=8$,
+$q=128$, $Q=2^{17}$, and $\beta=1$. However, these parameters will fail to
+compute a homomorphic NAND gate as the additional multiplication adds an error
+factor of $n\log{Q}$. Based on the bounds from the formulas, we need to set
+$Q \ge 2^{35}$. However, based on previous performance, we estimate the time
+to perform this operation to take over 30 hours.
 
-\begin{tabular}{r   l}
-\textbf{Operation} & \textbf{Time} \\
-\hline
-decomposition & 39.8ms \\
-matrix multiplication & 7.8ms \\
-\end{tabular}
-
+We did not rely on the formulas to compute our parameters. Because the formulas
+ignore noise cancellation, they produce larger bounds, with significant time increases,
+than are necessary for us to reliably calculate an encrypted NAND compared to those
+found from our experimental tests.
 
 \section{Limitations and Optimizations}
 
