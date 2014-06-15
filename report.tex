@@ -42,13 +42,29 @@ matrix multiplication & 7.8ms \\
 \end{tabular}
 
 
-\section{Performance Optimizations}
-The majority of time spent by our code is used in the computing the decomposition of
-matrix. Our attempts to improve performance by computing the function on low level
-matricies proved to be inefficient as it took too long to convert between these
-matricies and those used by SAGE. In the end, we settled on using a compiled version
-of our decompose function operating on the SAGE matrix after preallocating the space
-used by the matrix.
+\section{Limitations and Optimizations}
 
-The other significant optimization was in, \texttt{hLstAdd}, the function for computing the convolutions used in homomorphic decryption. Instead of recomputing the decompositions for each homomorphic multiplication, we precompute the decompositions in order to reduce the number of decompositions needed by a factor of $q$.
+For very small parameters, the limiting factor of our code is matrix binary
+decomposition. After trying several optimizations within Sage, we migrated
+this to low-level compiled code called from within Sage; however, the type 
+conversions to and from Sage matrices took longer than performing the 
+decomposition in Sage itself. Ultimately, we used a compiled version of the 
+decomposition code, with pre-allocated space for each matrix. Additionally,
+we pre-computed all constant decomposition matrices of unit vectors used in
+convolution for homomorphic decrpytion.
+
+As parameters increase even slightly, matrix multiplication approaches the 
+decomposition function with respect to running time. With realistic parameters
+that add any remote degree of security to homomorphic operations, matrix 
+multiplication will clearly dominate the running time of our implementation.
+
+\section{Future Work}
+
+There are two obvious improvements to be made on this implementation. The first
+is to use algebraic lattices, whose structure can be leveraged in order to
+decrease the complexity of our implementation. The second is to focus on
+implementation, using lower-level languages with hand-optimizations. Without
+both of these in conjunction, the implementation will likely not ever become
+fast enough to use for useful circuits in practice. 
+
 \end{document}
