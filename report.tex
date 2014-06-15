@@ -1,0 +1,40 @@
+\documentclass{article}
+\usepackage[margin=1.0in]{geometry}
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{hyperref}
+
+
+\begin{document}
+\centerline{\LARGE{\bf{CSE206A Project: Fully Homomorphic Encryption}}}
+\vspace{12.0pt}
+\centerline{Michael Walter \hspace{0.1in} James Mouradian \hspace{0.1in} Victor Balcer}
+\vspace{4.0pt}
+\centerline{\today}
+\section{Functionality}
+We implemented fully homomorphic encyryption and were able to perform a homomorphic
+NAND gate with parameters: $n=4$, $q=64$, $Q=2^{25}$, and $\beta=1$.
+(i.e. keys $s\in \mathbb{Z}_{64}^4$ and $z\in\mathbb{Z}_{2^{25}}^4$).
+
+\section{Parameter Tuning}
+
+% add smallest found parameters for beta=1 and n=8 with decryption and key switching
+% add estimation of time for caculating nand operation on nand gates.
+
+\begin{tabular}{r   l}
+\textbf{Operation} & \textbf{Time} \\
+\hline
+decomposition & 39.8ms \\
+matrix multiplication & 7.8ms \\
+\end{tabular}
+
+
+\section{Performance Optimizations}
+The majority of time spent by our code is used in the computing the decomposition of
+matrix. Our attempts to improve performance by computing the function on low level
+matricies proved to be inefficient as it took too long to convert between these
+matricies and those used by SAGE. In the end, we settled on using a compiled version
+of our decompose function operating on the SAGE matrix after preallocating the space
+used by the matrix.
+
+The other significant optimization was in, \texttt{hLstAdd}, the function for computing the convolutions used in homomorphic decryption. Instead of recomputing the decompositions for each homomorphic multiplication, we precompute the decompositions in order to reduce the number of decompositions needed by a factor of $q$.
+\end{document}
