@@ -19,7 +19,7 @@ framework.
 \section{Results}
 
 We implemented a proof-of-concept NAND gate, since it is functionally complete.
-The implementation is highly inefficient and features no aglebraic
+The implementation is highly inefficient and features no algebraic
 optimizations; our proof-of-concept takes approximately twenty minutes to
 compute an encrypted NAND over two bits with the following parameters: $n=4$,
 $q=64$, $Q=2^{25}$, and $\beta = 1$ (i.e. keys $s\in \mathbb{Z}_{64}^4$ and
@@ -62,11 +62,12 @@ multiplication will clearly dominate the running time of our implementation.
 
 \section{Future Work}
 
-There are two obvious improvements to be made on this implementation. The first
+There are three obvious improvements to be made on this implementation. The first is
+to use CRT to represent elements in $\mathbb{Z}_q$ more efficiently. The second
 is to use algebraic lattices, whose structure can be leveraged in order to
-decrease the complexity of our implementation. The second is to focus on
+decrease the complexity of our implementation. The third is to focus on
 implementation, using lower-level languages with hand-optimizations. Without
-both of these in conjunction, the implementation will likely not ever become
+all of these in conjunction, the implementation will likely not ever become
 fast enough to use for useful circuits in practice. 
 
 \end{document}
