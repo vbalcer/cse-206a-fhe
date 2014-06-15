@@ -18,7 +18,7 @@ framework.
 \section{Results}
 
 We implemented a proof-of-concept NAND gate, since it is functionally complete.
-The implementation is highly inefficient and features no alebraic
+The implementation is highly inefficient and features no aglebraic
 optimizations; our proof-of-concept takes approximately twenty minutes to
 compute an encrypted NAND over two bits with the following parameters: $n=4$,
 $q=64$, $Q=2^{25}$, and $\Beta=1$ (i.e. keys $s\in \mathbb{Z}_{64}^4$ and
@@ -26,7 +26,7 @@ $z\in\mathbb{Z}_{2^{25}}^4$). These are the smallest parameters for which we
 can compute a NAND gate with error $\Beta > 0$. To validate the gate, we
 computed an encrypted NAND over two randomly generated bits and compared the
 the decrypted output with the expected output. Decryption was successful across
-twenty independent trials. The the trials are meaningful; with increased error
+twenty independent trials. The trials are meaningful; with increased error
 the test reports both positive and negative results.
 
 \section{Parameter Tuning}
@@ -51,7 +51,7 @@ conversions to and from Sage matrices took longer than performing the
 decomposition in Sage itself. Ultimately, we used a compiled version of the 
 decomposition code, with pre-allocated space for each matrix. Additionally,
 we pre-computed all constant decomposition matrices of unit vectors used in
-convolution for homomorphic decrpytion.
+convolution for homomorphic decryption.
 
 As parameters increase even slightly, matrix multiplication approaches the 
 decomposition function with respect to running time. With realistic parameters
